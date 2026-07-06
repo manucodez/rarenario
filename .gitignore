@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+ctg310/
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Checkpoints
+checkpoints/
+*.pt
+*.pth
+
+# Processed data
+data/processed/
+
+# Raw nuScenes
+data/nuscenes/
+
+# Logs
+logs/
+wandb/
+
+# OS
+.DS_Store
+Thumbs.db

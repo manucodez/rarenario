@@ -186,19 +186,14 @@ def main():
             f"scene_idx={scene_idx} is out of range for {samples['past'].shape[0]} sampled scenes."
         )
 
-    past = samples["past"][scene_idx]          # (1, T_past, A, D)
-    future = samples["future"][scene_idx]      # (1, T_future, A, D)
-    pred = samples["pred_future"][scene_idx]   # (1, T_future, A, D)
-    past_mask = samples["past_mask"][scene_idx]
-    future_mask = samples["future_mask"][scene_idx]
-    # Remove batch dimension
-    past_mask = np.squeeze(past_mask, axis=0)
-    future_mask = np.squeeze(future_mask, axis=0)
-
-    # Remove batch dimension
-    past = np.squeeze(past, axis=0)
-    future = np.squeeze(future, axis=0)
-    pred = np.squeeze(pred, axis=0)
+    # sample.py already strips the batch dim before saving each scene, so
+    # indexing by scene_idx here already yields the unbatched (T, A, D) /
+    # (T, A) arrays -- no further squeeze needed.
+    past = samples["past"][scene_idx]          # (T_past, A, D)
+    future = samples["future"][scene_idx]      # (T_future, A, D)
+    pred = samples["pred_future"][scene_idx]   # (T_future, A, D)
+    past_mask = samples["past_mask"][scene_idx]      # (T_past, A)
+    future_mask = samples["future_mask"][scene_idx]  # (T_future, A)
 
     # Denormalize to original coordinate space for plotting
     past = denormalize_array(past[None, ...], mean, std)[0]

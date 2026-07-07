@@ -1,0 +1,9 @@
+torch>=2.0
+numpy>=1.24
+PyYAML>=6.0
+matplotlib>=3.7
+
+# Only needed for scripts/preprocess.py (real nuScenes data).
+# Skip these if you're just running the synthetic-data smoke test.
+nuscenes-devkit>=1.1.10
+pyquaternion>=0.9.9

@@ -55,8 +55,8 @@ def agent_validity_mask(past_mask: np.ndarray, future_mask: np.ndarray) -> np.nd
     past_mask: (T_past, A)
     future_mask: (T_future, A)
     """
-    past_present = past_mask.any(axis=0)
-    future_present = future_mask.any(axis=0)
+    past_present = past_mask.any(axis=0)    # (A,)
+    future_present = future_mask.any(axis=0)  # (A,)
     return past_present | future_present
 
 

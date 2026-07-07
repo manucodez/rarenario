@@ -114,7 +114,7 @@ class TrajectoryContextEncoder(nn.Module):
             dropout=dropout,
         )
         self.scene_fuser = MLP(
-            in_dim=agent_hidden_dim * 2,
+            in_dim=agent_hidden_dim + state_dim,
             hidden_dim=agent_hidden_dim,
             out_dim=context_dim,
             num_layers=3,

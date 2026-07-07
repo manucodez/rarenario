@@ -1,0 +1,31 @@
+# paths
+data_root: data/processed
+checkpoint_dir: checkpoints
+
+# data split
+past_steps: 20
+future_steps: 21
+
+# training
+batch_size: 2
+epochs: 50
+learning_rate: 0.0003
+weight_decay: 0.00001
+num_workers: 0
+
+# diffusion
+num_diffusion_steps: 1000
+beta_start: 0.0001
+beta_end: 0.02
+
+# model
+state_dim: 4
+context_dim: 128
+agent_hidden_dim: 256
+time_emb_dim: 64
+dropout: 0.1
+
+# logging / saving
+save_every: 5
+seed: 42
+device: cpu

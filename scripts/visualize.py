@@ -191,6 +191,9 @@ def main():
     pred = samples["pred_future"][scene_idx]   # (1, T_future, A, D)
     past_mask = samples["past_mask"][scene_idx]
     future_mask = samples["future_mask"][scene_idx]
+    # Remove batch dimension
+    past_mask = np.squeeze(past_mask, axis=0)
+    future_mask = np.squeeze(future_mask, axis=0)
 
     # Remove batch dimension
     past = np.squeeze(past, axis=0)

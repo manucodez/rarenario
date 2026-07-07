@@ -1,0 +1,24 @@
+# Defaults for scripts/rollout.py (guided sampling / "scenario editing").
+# Kept separate from configs/train_config.yaml, same way CTG separates
+# scene_edit_config.py from algo_config.py: training hyperparameters and
+# rollout/guidance hyperparameters change independently of each other.
+
+num_scenes: 3
+num_steps: null          # null = use full num_diffusion_steps from train_config.yaml
+guidance_scale: 1.0
+
+guidance:
+  - collision_avoidance
+  - target_speed
+
+guidance_kwargs:
+  collision_avoidance:
+    min_dist: 2.0
+  target_speed:
+    target_speed: 8.0
+  stay_behind_lead:
+    min_gap: 5.0
+    ego_index: 0
+    lead_index: 1
+
+results_root_dir: outputs/rollouts

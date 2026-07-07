@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -480,6 +480,86 @@ class DiffusionModel(nn.Module):
                 x = model_mean
 
             x = torch.where(future_mask.unsqueeze(-1), x, torch.zeros_like(x))
+
+        return x
+
+    def guided_sample(
+        self,
+        past: torch.Tensor,
+        guidance_fn: "Callable[..., torch.Tensor]",
+        past_mask: Optional[torch.Tensor] = None,
+        future_mask: Optional[torch.Tensor] = None,
+        num_steps: Optional[int] = None,
+        guidance_scale: float = 1.0,
+        guidance_clip_grad_norm: Optional[float] = 1.0,
+    ) -> torch.Tensor:
+        """
+        CTG-style guided reverse diffusion.
+
+        Identical to `sample()`, except at every denoising step the DDPM
+        mean is nudged against the gradient of `guidance_fn(x, ...)`
+        (a scalar cost — lower is better, e.g. models/guidance.py's
+        `collision_avoidance_cost`). This is what lets one unconditionally
+        -trained model be steered towards arbitrary rules at sampling
+        time, without retraining. Set `guidance_scale=0` to recover plain
+        `sample()`.
+
+        guidance_fn: callable taking x (B, F, A, D) [+ future_mask=...] and
+            returning a scalar tensor. Build one with
+            `models.guidance.compose_guidance([...])`.
+        """
+        from models.guidance import guidance_grad  # local import avoids a cycle
+
+        device = past.device
+        B = past.shape[0]
+        A = past.shape[2]
+        F = self.future_steps
+        D = self.state_dim
+
+        if future_mask is None:
+            future_mask = torch.ones(B, F, A, device=device, dtype=torch.bool)
+
+        x = torch.randn(B, F, A, D, device=device)
+
+        steps = self.num_diffusion_steps if num_steps is None else min(num_steps, self.num_diffusion_steps)
+        step_indices = torch.linspace(self.num_diffusion_steps - 1, 0, steps, device=device).long()
+
+        for idx in step_indices:
+            t = torch.full((B,), int(idx.item()), device=device, dtype=torch.long)
+
+            with torch.no_grad():
+                pred_noise = self.predict_noise(
+                    x_noisy=x, t=t, past=past, past_mask=past_mask, future_mask=future_mask,
+                )
+
+                betas_t = self._extract(self.betas, t, x.shape)
+                sqrt_one_minus_alphas_cumprod_t = self._extract(self.sqrt_one_minus_alphas_cumprod, t, x.shape)
+                sqrt_recip_alphas_t = self._extract(self.sqrt_recip_alphas, t, x.shape)
+
+                model_mean = sqrt_recip_alphas_t * (
+                    x - betas_t * pred_noise / sqrt_one_minus_alphas_cumprod_t
+                )
+
+            # -- guidance correction (needs grad, hence the separate block) --
+            if guidance_scale != 0.0:
+                grad = guidance_grad(guidance_fn, model_mean, future_mask=future_mask)
+                if guidance_clip_grad_norm is not None:
+                    flat = grad.reshape(grad.shape[0], -1)
+                    norm = flat.norm(dim=-1).clamp_min(1e-6)
+                    factor = torch.clamp(guidance_clip_grad_norm / norm, max=1.0)
+                    grad = grad * factor.view(-1, *([1] * (grad.dim() - 1)))
+                with torch.no_grad():
+                    model_mean = model_mean - guidance_scale * grad
+
+            with torch.no_grad():
+                if int(idx.item()) > 0:
+                    posterior_var_t = self._extract(self.posterior_variance, t, x.shape)
+                    noise = torch.randn_like(x)
+                    x = model_mean + torch.sqrt(posterior_var_t) * noise
+                else:
+                    x = model_mean
+
+                x = torch.where(future_mask.unsqueeze(-1), x, torch.zeros_like(x))
 
         return x
 

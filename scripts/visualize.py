@@ -82,10 +82,9 @@ def plot_scene(
     pred_xy = pred_future[..., :2]
 
     valid_agents = np.where(np.logical_or(past_mask.any(axis=0), future_mask.any(axis=0)))[0]
-    agent_ids = valid_agents
 
     if max_agents is not None:
-        agent_ids = agent_ids[:max_agents]
+        valid_agents = valid_agents[:max_agents]
 
     fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharex=True, sharey=True)
 
@@ -96,7 +95,7 @@ def plot_scene(
     ]
 
     for ax, title, xy, mask in panels:
-        for agent_id in agent_ids:
+        for agent_id in valid_agents:
             coords = xy[:, agent_id, :]
             agent_mask = mask[:, agent_id]
 

@@ -81,8 +81,8 @@ def plot_scene(
     future_xy = future[..., :2]
     pred_xy = pred_future[..., :2]
 
-    valid_agents = agent_validity_mask(past_mask, future_mask)
-    agent_ids = np.where(valid_agents)[0]
+    valid_agents = np.where(np.logical_or(past_mask.any(axis=0), future_mask.any(axis=0)))[0]
+    agent_ids = valid_agents
 
     if max_agents is not None:
         agent_ids = agent_ids[:max_agents]

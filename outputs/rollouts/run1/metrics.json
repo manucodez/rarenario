@@ -1,0 +1,9 @@
+{
+  "ADE": 157.48602294921875,
+  "FDE": 175.06201171875,
+  "collision_rate": 0.0,
+  "mean_speed": 133.8759765625,
+  "std_speed": 84.1470718383789,
+  "num_scenes": 3,
+  "prediction_key": "guided_future"
+}

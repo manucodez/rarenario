@@ -59,11 +59,11 @@ def sample_batch(
     )
 
     return {
-        "past": past.cpu(),
-        "future": future.cpu(),
-        "pred_future": pred_future.cpu(),
-        "past_mask": past_mask.cpu(),
-        "future_mask": future_mask.cpu(),
+        "past": past.squeeze(0).cpu(),
+        "future": future.squeeze(0).cpu(),
+        "pred_future": pred_future.squeeze(0).cpu(),
+        "past_mask": past_mask.squeeze(0).cpu(),
+        "future_mask": future_mask.squeeze(0).cpu(),
     }
 
 

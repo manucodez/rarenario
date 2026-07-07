@@ -144,6 +144,9 @@ def preprocess_nuscenes(
     version: str = "v1.0-mini",
     max_agents: int = 64,
     max_timesteps: int | None = None,
+    history_steps: int = 20,
+    future_steps: int = 21,
+    stride: int = 1,
 ) -> None:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -190,12 +193,26 @@ def preprocess_nuscenes(
             mask = np.concatenate([mask, mask_pad], axis=0)
             sample_tokens = sample_tokens + [""] * pad_t
 
-        all_trajs.append(traj)
-        all_masks.append(mask)
-        scene_names.append(scene["name"])
-        scene_sample_tokens.append(sample_tokens)
-        scene_agent_tokens.append(agent_tokens)
-        scene_lengths_kept.append(min(len(get_scene_sample_tokens(nusc, scene)), global_timesteps))
+        window_size = history_steps + future_steps
+        if traj.shape[0] < window_size:
+            pad_t = window_size - traj.shape[0]
+            traj_pad = np.full((pad_t, traj.shape[1], traj.shape[2]), np.nan, dtype=np.float32)
+            mask_pad = np.zeros((pad_t, mask.shape[1]), dtype=bool)
+            traj = np.concatenate([traj, traj_pad], axis=0)
+            mask = np.concatenate([mask, mask_pad], axis=0)
+            sample_tokens = sample_tokens + [""] * pad_t
+
+        for start in range(0, traj.shape[0] - window_size + 1, stride):
+            window_traj = traj[start : start + window_size]
+            window_mask = mask[start : start + window_size]
+            window_tokens = sample_tokens[start : start + window_size]
+
+            all_trajs.append(window_traj)
+            all_masks.append(window_mask)
+            scene_names.append(scene["name"])
+            scene_sample_tokens.append(window_tokens)
+            scene_agent_tokens.append(agent_tokens)
+            scene_lengths_kept.append(window_size)
 
         print(f"Processed {scene['name']}: {traj.shape[0]} timesteps, {len(agent_tokens)} agents")
 
@@ -240,6 +257,9 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional cap on timesteps per scene. Default: max scene length",
     )
+    parser.add_argument("--history_steps", type=int, default=20, help="Number of history timesteps per sample")
+    parser.add_argument("--future_steps", type=int, default=21, help="Number of future timesteps per sample")
+    parser.add_argument("--stride", type=int, default=1, help="Stride between sliding windows")
     return parser.parse_args()
 
 
@@ -251,6 +271,9 @@ def main() -> None:
         version=args.version,
         max_agents=args.max_agents,
         max_timesteps=args.max_timesteps,
+        history_steps=args.history_steps,
+        future_steps=args.future_steps,
+        stride=args.stride,
     )
 
 
